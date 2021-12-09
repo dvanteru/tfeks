@@ -1,0 +1,21 @@
+data "aws_iam_policy_document" "halo_jenkins_efs_allow" {
+  statement {
+    sid = "AllowJenkinsEFS"
+    effect = "Allow"
+
+    actions = [
+      "elasticfilesystem:*",
+    ]
+    resources = [
+      "*"
+    ]
+    principals {
+      type = "AWS"
+
+      identifiers = [
+        "eks.amazonaws.com"
+      ]
+
+    }
+  }
+}

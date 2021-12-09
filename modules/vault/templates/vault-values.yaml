@@ -1,0 +1,69 @@
+server:
+  affinity: |
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: {{ template "vault.name" . }}
+                release: "{{ .Release.Name }}"
+                component: server
+            topologyKey: kubernetes.io/hostname
+
+  serviceAccount:
+    create: true
+    annotations: |
+      eks.amazonaws.com/role-arn: "${iam_role_arn}"
+
+  # image:
+  #   repository: ${account_id}.dkr.ecr.eu-west-2.amazonaws.com/fnz-ai-vault
+  #   tag: 1.4.2
+
+  ingress:
+    enabled: false
+
+  service:
+    enabled: true
+
+  ha:
+    enabled: true
+    replicas: 1
+
+    config: |
+      ui = true
+
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+
+      storage "consul" {
+        path = "vault"
+        address = "HOST_IP:8500"
+      }
+
+      seal "awskms" {
+          region      = "${region}"
+          kms_key_id = "${kms_key_id}"
+          endpoint   = "https://kms.${region}.amazonaws.com"
+      }
+
+      log_level = "Debug"
+  extraEnvironmentVars:
+    VAULT_LOG_LEVEL: debug
+    AWS_ROLE_SESSION_NAME: vault-ctf
+    AWS_ROLE_ARN: ${iam_role_arn}
+
+  image:
+    tag: "1.6.0"
+
+injector:
+  enabled: true
+  # image:
+  #   repository: ${account_id}.dkr.ecr.eu-west-2.amazonaws.com/fnz-ai-vault-k8s
+  #   tag: 0.4.0
+  # agentImage:
+  #   repository: ${account_id}.dkr.ecr.eu-west-2.amazonaws.com/fnz-ai-vault
+  #   tag: 1.4.2
+ui:
+  enabled: true

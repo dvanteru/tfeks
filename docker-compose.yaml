@@ -1,0 +1,20 @@
+version: "2"
+
+services:
+  terraform:
+    image: ${ECR_REGISTRY_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}:${VERSION}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ./:/data
+      - ~/.aws:/root/.aws
+    working_dir: /data
+    entrypoint: /etc/init.d/terraform.sh
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_MFA_EXPIRY=${AWS_MFA_EXPIRY}
+      - AWS_PROFILE=${AWS_PROFILE}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}

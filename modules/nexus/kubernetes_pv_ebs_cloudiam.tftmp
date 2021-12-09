@@ -1,0 +1,46 @@
+resource "kubernetes_persistent_volume" "ebs-cloudiam-pv" {
+  metadata {
+    name = "nexus-cloudiam-ebs-data-pv"
+  }
+
+  spec {
+    capacity = {
+      storage = var.volume_size
+    }
+
+    volume_mode                      = "Filesystem"
+    access_modes                     = ["ReadWriteMany"]
+    persistent_volume_reclaim_policy = "Retain"
+    storage_class_name               = "gp2"
+
+    persistent_volume_source {
+      csi {
+        driver = "ebs.csi.aws.com"
+        volume_handle = aws_ebs_volume.nexus_cloudiam.id
+      }
+    }
+  }
+  depends_on = [
+    aws_ebs_volume.nexus_cloudiam
+  ]
+}
+
+resource "kubernetes_persistent_volume_claim" "ebs-cloudiam-claim" {
+  metadata {
+    name       = "nexus-sonatype-nexus-cloudiam-nexus-sonatype-nexus-0" #"${var.service_name}-pvc"
+    namespace  = kubernetes_namespace.nexus.metadata[0].name
+  }
+
+  spec {
+    access_modes       = ["ReadWriteMany"]
+    storage_class_name = "gp2"
+
+    resources {
+      requests = {
+        storage = var.volume_size
+      }
+    }
+
+    volume_name = kubernetes_persistent_volume.ebs-cloudiam-pv.metadata[0].name
+  }
+}

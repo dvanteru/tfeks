@@ -1,0 +1,51 @@
+resource "kubernetes_ingress" "jenkins" {
+
+  metadata {
+    name = "${var.namespace}-jenkins-ingress"
+    namespace = kubernetes_namespace.jenkins.metadata[0].name
+    annotations = {
+      "kubernetes.io/ingress.class": "alb"
+      "alb.ingress.kubernetes.io/scheme": "internal"
+      "alb.ingress.kubernetes.io/certificate-arn": aws_acm_certificate_validation.main.certificate_arn
+      "alb.ingress.kubernetes.io/listen-ports": "[{\"HTTP\":80}, {\"HTTPS\":443}]"
+      "alb.ingress.kubernetes.io/actions.ssl-redirect": "{\"Type\": \"redirect\", \"RedirectConfig\": { \"Protocol\": \"HTTPS\", \"Port\": \"443\", \"StatusCode\": \"HTTP_301\"}}"
+      "alb.ingress.kubernetes.io/healthcheck-path": var.healthcheck_path
+      "external-dns.alpha.kubernetes.io/alias": true
+    }
+  }
+  wait_for_load_balancer = true
+  spec {
+    rule {
+      http {
+        path {
+          path = "/*"
+
+          backend {
+            service_name = "ssl-redirect"
+            service_port = "use-annotation"
+          }
+        }
+      }
+    }
+
+    rule {
+      host = "${var.service_name}.${var.domain}"
+      
+      http {
+        path {
+          path = "/*"
+
+          backend {
+            service_name = var.service_name
+            service_port = var.port
+          }
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    helm_release.jenkins,
+    aws_acm_certificate.main,
+  ]
+}

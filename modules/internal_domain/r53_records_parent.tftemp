@@ -1,0 +1,10 @@
+resource "aws_route53_record" "parent_ns" {
+  zone_id = aws_route53_zone.primary.zone_id
+  name    = "${var.subdomain}.${var.tld_internal_name}."
+  type    = "NS"
+  ttl     = "172800"
+
+  records = aws_route53_delegation_set.subdomain.name_servers
+
+}
+

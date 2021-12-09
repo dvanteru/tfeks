@@ -1,0 +1,14 @@
+module "efs" {
+  source = "../../modules/efs"
+
+  project         = var.project
+  environment     = var.environment
+  component       = var.component
+  aws_account_id  = var.aws_account_id
+
+  root_directory_path     = "/jenkins"
+  vpc_id                  = var.efs_vpc_id
+  mount_target_subnets    = var.efs_subnet_ids
+  allowed_security_groups = var.efs_allowed_security_groups
+}
+

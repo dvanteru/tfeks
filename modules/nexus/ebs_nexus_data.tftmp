@@ -1,0 +1,14 @@
+resource "aws_ebs_volume" "nexus_data" {
+  availability_zone = "eu-west-2a"
+  size              = var.volume_size
+
+  encrypted  = true
+  kms_key_id = module.kms_ebs.key_arn
+
+  tags = merge(
+  local.default_tags,
+  {
+    "Name" = "${local.csi}-data"
+  }
+  )
+}

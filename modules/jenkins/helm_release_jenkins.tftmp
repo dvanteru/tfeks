@@ -1,0 +1,134 @@
+resource "helm_release" "jenkins" {
+  name       = var.service_name
+  chart      = "jenkins"
+  repository = "https://charts.jenkins.io"
+  version    = var.chart_release
+  namespace  = kubernetes_namespace.jenkins.metadata[0].name
+
+  
+  wait             = true
+  create_namespace = true
+  timeout          = 15 * 60
+
+  set {
+    name = "statefulset.enabled"
+    value = "true"
+  }
+  set {
+    name  = "adminUser"
+    value = "admin"
+  }
+  set {
+    name  = "adminPassword"
+    value = var.adminPassword
+  }
+
+  set {
+    name = "jenkins.resources.requests.cpu"
+    value = "1024m"
+  }
+  set {
+    name = "jenkins.resources.requests.memory"
+    value = "4800Mi"
+  }
+  set {
+    name = "jenkins.livenessProbe.path"
+    value = var.healthcheck_path
+  }
+  set {
+    name = "jenkins.nodeSelector.usage"
+    value = "jenkins"
+  }
+  set {
+    name = "jenkinsProxy.enabled"
+    value = "true"
+  }
+  set {
+    name = "jenkinsProxy.port"
+    value = var.port
+  }
+  set {
+    name = "jenkinsProxy.env.jenkinsHttpHost"
+    value = "${var.service_name}.${var.domain}"
+  }
+  set {
+    name = "persistence.enabled"
+    value = "true"
+  }
+  set {
+    name  = "persistence.existingClaim"
+    value = kubernetes_persistent_volume_claim.efs.metadata[0].name
+  }
+  set {
+    name = "persistence.storageClassName"
+    value = "${var.service_name}_volume.${var.domain}"
+  }
+  set {
+    name = "persistence.storageClass"
+    value = "aws-efs"
+  }
+  set {
+    name = "persistence.accessMode"
+    value = "ReadWriteMany"
+  }
+  set {
+    name = "persistence.size"
+    value = var.volume_size
+  }
+  set {
+    name = "persistence.volumes[0].name"
+    value = "var"
+  }
+  set {
+    name = "jenkinsBackup.persistence.enabled"
+    value = "true"
+  }
+  set {
+    name = "serviceAccount.create"
+    value = "false"
+  }
+  set {
+    name = "config.enabled"
+    value = "true"
+  }
+
+  set-string {
+    name  = "controller.image"
+    value = "${var.jenkins_image_path}"
+  }
+
+  set-string {
+    name  = "controller.tag"
+    value = "${var.jenkins_image_tag}"
+  }
+
+  set {
+    name  = "controller.adminPassword"
+    value = random_password.jenkins.result
+  }
+
+  set {
+    name  = "controller.ingress.enabled"
+    value = false
+  }
+
+  set {
+    name  = "controller.serviceType"
+    value = "NodePort"
+  }
+
+  set {
+    name  = "controller.podSecurityContextOverride.runAsNonRoot"
+    value = false
+  }
+
+  set {
+    name  = "controller.podSecurityContextOverride.runAsUser"
+    value = 0
+  }
+
+  set {
+    name  = "controller.podSecurityContextOverride.fsGroup"
+    value = 0
+  }
+}
